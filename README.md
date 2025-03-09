@@ -6,7 +6,7 @@ search can be used with images of any kind.
 
 ```shell
 conda create -n gallerysearch python=3.13
-pip install -r requirements.txt
+pip install -e .
 # "eog" is to open with eye of gnome on linux
 galsearch --dir /home/Pictures --query "dog" --open_with eog
 ```
