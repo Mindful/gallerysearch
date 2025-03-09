@@ -78,7 +78,7 @@ def main():
 
     ts_parser = subparsers.add_parser('tagsearch', help='Tag search')
     ts_parser.add_argument('--dir', type=str, required=True, help='Directory containing images')
-    ts_parser.add_argument('--query', type=str, required=True, help='Comma-separated list of tags')
+    ts_parser.add_argument('--query', type=str, required=True, help='Space-separated list of tags')
     ts_parser.add_argument('--print', type=bool, default=True, help='Print results')
     ts_parser.add_argument('--open_with', type=str, default=None, help='Program to open results with')
     ts_parser.set_defaults(func=tagsearch)

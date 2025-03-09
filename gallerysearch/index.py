@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from pathlib import Path
 import faiss
 import numpy as np
@@ -25,30 +26,61 @@ class TagIndex:
         self.gallery_pairs = gather_gallery_files(Path(directory))
 
         self.tags_by_pair = {}
+        self.rating_by_pair = {}
+        self.pairs_by_tag = defaultdict(set)
+        self.pairs_by_rating = defaultdict(set)
+
         for pair in tqdm(self.gallery_pairs, desc="Loading tags"):
             with open(pair.json_file) as f:
                 data = json.load(f)
-                if "tags_general" in data:
-                    self.tags_by_pair[pair] = set(data["tags_general"])
-                elif "gen_tags" in data:
-                    self.tags_by_pair[pair] = set(data["gen_tags"]["features"])
+                tag_keys = (
+                    "tags_general",
+                    "gen_tags",
+                    "tags"
+                )
+                tag_key = next(
+                    (key for key in tag_keys if key in data),
+                    None
+                )
+                if tag_key:
+                    tags = set(data[tag_key])
+                    self.tags_by_pair[pair] = tags
+                    for tag in tags:
+                        self.pairs_by_tag[tag].add(pair)
 
-        self.pairs_by_tag = {}
-        for pair, tags in self.tags_by_pair.items():
-            for tag in tags:
-                if tag not in self.pairs_by_tag:
-                    self.pairs_by_tag[tag] = set()
-                self.pairs_by_tag[tag].add(pair)
+                if "rating" in data:
+                    rating = {
+                        "General": "s",
+                        "R-18": "e",
+                        "R-18G": "e",
+                        "g": "s",
+                    }.get(data["rating"], data["rating"])
+                    self.rating_by_pair[pair] = rating
+                    self.pairs_by_rating[rating].add(pair)
+
 
     def search(self, text: str) -> List[GalleryPair]:
-        tags = [
-            x.strip() for x in text.lower().split(",")
+        query_parts = [
+            x.strip() for x in text.lower().split()
         ]
+        rating_text = next((x for x in query_parts if x.startswith("rating:")), None)
+        tags = [x for x in query_parts if not x.startswith("rating:") and not x.startswith('-')]
+        negative_tags = [x[1:] for x in query_parts if x.startswith('-')]
         # we want only the images that match all tags
-        return [
+        output = [
             pair for pair in self.pairs_by_tag[tags[0]]
             if all(tag in self.tags_by_pair[pair] for tag in tags)
+            and all(tag not in self.tags_by_pair[pair] for tag in negative_tags)
         ]
+
+        if rating_text:
+            rating = rating_text.split(":")[1].strip()
+            output = [
+                pair for pair in output
+                if self.rating_by_pair.get(pair) == rating
+            ]
+
+        return output
 
 
 class CLIPIndex:
