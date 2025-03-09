@@ -1,0 +1,8 @@
+faiss-cpu # faiss-gpu also fine
+pillow
+torch
+numpy
+transformers
+platformdirs
+accelerate
+tqdm
