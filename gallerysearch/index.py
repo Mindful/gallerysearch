@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import faiss
 import numpy as np
@@ -18,7 +19,39 @@ def stable_hash(input_string: str) -> str:
     sha1_hash = hashlib.sha1(encoded_string)
     return sha1_hash.hexdigest()
 
-class Index:
+
+class TagIndex:
+    def __init__(self, directory: str):
+        self.gallery_pairs = gather_gallery_files(Path(directory))
+
+        self.tags_by_pair = {}
+        for pair in tqdm(self.gallery_pairs, desc="Loading tags"):
+            with open(pair.json_file) as f:
+                data = json.load(f)
+                if "tags_general" in data:
+                    self.tags_by_pair[pair] = set(data["tags_general"])
+                elif "gen_tags" in data:
+                    self.tags_by_pair[pair] = set(data["gen_tags"]["features"])
+
+        self.pairs_by_tag = {}
+        for pair, tags in self.tags_by_pair.items():
+            for tag in tags:
+                if tag not in self.pairs_by_tag:
+                    self.pairs_by_tag[tag] = set()
+                self.pairs_by_tag[tag].add(pair)
+
+    def search(self, text: str) -> List[GalleryPair]:
+        tags = [
+            x.strip() for x in text.lower().split(",")
+        ]
+        # we want only the images that match all tags
+        return [
+            pair for pair in self.pairs_by_tag[tags[0]]
+            if all(tag in self.tags_by_pair[pair] for tag in tags)
+        ]
+
+
+class CLIPIndex:
     def __init__(self, embedder: CLIPEmbedder, directory: str):
         self.embedder: CLIPEmbedder = embedder
         key = stable_hash(directory + embedder.model_name)

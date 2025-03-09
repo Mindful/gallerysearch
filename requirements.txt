@@ -6,3 +6,5 @@ transformers
 platformdirs
 accelerate
 tqdm
+sentence-transformers
+dghs-imgutils
