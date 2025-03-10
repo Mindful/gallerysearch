@@ -8,8 +8,9 @@ search can be used with images of any kind.
 conda create -n gallerysearch python=3.13
 pip install -e .
 
-# image search with CLIP "eog" is to open with eye of gnome on linux
-galsearch imgsearch --dir /home/Pictures --query "dog" --open_with eog
+# image search with CLIP 
+# feh is a lightweight image viewer, "eog" also works for gnome-based desktops
+galsearch imgsearch --dir /home/Pictures --query "dog" --open_with "feh -t -P --scale-down"
 
 # tag illustrations and then search by tags
 galsearch tag --dir /home/Pictures/illustrations

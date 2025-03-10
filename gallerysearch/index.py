@@ -33,20 +33,15 @@ class TagIndex:
         for pair in tqdm(self.gallery_pairs, desc="Loading tags"):
             with open(pair.json_file) as f:
                 data = json.load(f)
-                tag_keys = (
-                    "tags_general",
-                    "gen_tags",
-                    "tags"
-                )
-                tag_key = next(
-                    (key for key in tag_keys if key in data),
-                    None
-                )
-                if tag_key:
-                    tags = set(data[tag_key])
-                    self.tags_by_pair[pair] = tags
-                    for tag in tags:
-                        self.pairs_by_tag[tag].add(pair)
+                if data['category'] == 'danbooru':
+                    tag_key = 'tags_general'
+                elif data['category'] == 'pixiv':
+                    tag_key = 'tags'
+
+                tags = set(data.get(tag_key, [])) | set(data.get('gen_tags', {}).get('features', []))
+                self.tags_by_pair[pair] = tags
+                for tag in tags:
+                    self.pairs_by_tag[tag].add(pair)
 
                 if "rating" in data:
                     rating = {

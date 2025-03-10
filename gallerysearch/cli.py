@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from pprint import pp
 
+import PIL
 from tqdm import tqdm
 from imgutils.tagging import get_wd14_tags
 
@@ -11,6 +12,9 @@ from gallerysearch.embed import CLIPEmbedder
 from gallerysearch.gather import gather_gallery_files
 from gallerysearch.index import CLIPIndex, TagIndex
 
+def run_opener(opener: str, image_paths: list[Path]):
+    if opener and image_paths:
+        subprocess.run([*opener.split(), *image_paths])
 
 def imgsearch(args):
     embedder = CLIPEmbedder(model_name=args.model)
@@ -22,8 +26,7 @@ def imgsearch(args):
     if args.print:
         pp(image_paths)
 
-    if args.open_with and image_paths:
-        subprocess.run([args.open_with, *image_paths])
+    run_opener(args.open_with, image_paths)
 
 def tag(args):
     pairs = gather_gallery_files(Path(args.dir))
@@ -34,13 +37,19 @@ def tag(args):
             if 'gen_tags' in json_data:
                 continue
 
-
-            rating, features, chars = get_wd14_tags(img_file)
-            json_data['gen_tags'] = {
-                'rating': sorted(list(rating.keys()), key=lambda x: rating[x], reverse=True)[0],
-                'features': list(features.keys()),
-                'chars': list(chars.keys()),
-            }
+            try:
+                rating, features, chars = get_wd14_tags(img_file)
+                json_data['gen_tags'] = {
+                    'rating': sorted(list(rating.keys()), key=lambda x: rating[x], reverse=True)[0],
+                    'features': list(features.keys()),
+                    'chars': list(chars.keys()),
+                }
+            except PIL.UnidentifiedImageError:
+                json_data['gen_tags'] = {
+                    'rating': '',
+                    'features': [],
+                    'chars': [],
+                }
 
             f.seek(0)
             json.dump(json_data, f, indent=4)
@@ -54,8 +63,8 @@ def tagsearch(args):
     if args.print:
         pp(image_paths)
 
-    if args.open_with and image_paths:
-        subprocess.run([args.open_with, *image_paths])
+    run_opener(args.open_with, image_paths)
+
 
 
 
