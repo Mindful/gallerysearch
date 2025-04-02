@@ -38,7 +38,11 @@ class TagIndex:
                 elif data['category'] == 'pixiv':
                     tag_key = 'tags'
 
+
                 tags = set(data.get(tag_key, [])) | set(data.get('gen_tags', {}).get('features', []))
+                if data.get('illust_ai_type', 0) == 2 or any('AI' in x for x in tags):
+                    tags.add('ai')
+
                 self.tags_by_pair[pair] = tags
                 for tag in tags:
                     self.pairs_by_tag[tag].add(pair)

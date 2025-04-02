@@ -14,7 +14,7 @@ from gallerysearch.index import CLIPIndex, TagIndex
 
 def run_opener(opener: str, image_paths: list[Path]):
     if opener and image_paths:
-        subprocess.run([*opener.split(), *image_paths])
+        subprocess.run([*opener.split(), *sorted(image_paths)])
 
 def imgsearch(args):
     embedder = CLIPEmbedder(model_name=args.model)
