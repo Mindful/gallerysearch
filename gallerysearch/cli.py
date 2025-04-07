@@ -65,7 +65,15 @@ def tagsearch(args):
 
     run_opener(args.open_with, image_paths)
 
-
+def generate_jsonfiles(args):
+    dir = Path(args.dir)
+    for file in dir.glob('*'):
+        if file.suffix == '.json':
+            continue
+        json_file = dir / (file.name + '.json')
+        if not json_file.exists():
+            with json_file.open('w') as f:
+                json.dump({'category': 'manual'}, f, indent=4)
 
 
 
@@ -91,6 +99,10 @@ def main():
     ts_parser.add_argument('--print', type=bool, default=True, help='Print results')
     ts_parser.add_argument('--open_with', type=str, default=None, help='Program to open results with')
     ts_parser.set_defaults(func=tagsearch)
+
+    jsonfile_parser = subparsers.add_parser('jsonfile', help='Generate json files')
+    jsonfile_parser.add_argument('--dir', type=str, required=True, help='Directory containing images')
+    jsonfile_parser.set_defaults(func=generate_jsonfiles)
 
     args = parser.parse_args()
     args.func(args)

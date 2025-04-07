@@ -37,6 +37,8 @@ class TagIndex:
                     tag_key = 'tags_general'
                 elif data['category'] == 'pixiv':
                     tag_key = 'tags'
+                else:
+                    tag_key = None
 
 
                 tags = set(data.get(tag_key, [])) | set(data.get('gen_tags', {}).get('features', []))
