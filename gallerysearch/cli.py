@@ -12,9 +12,20 @@ from gallerysearch.embed import CLIPEmbedder
 from gallerysearch.gather import gather_gallery_files
 from gallerysearch.index import CLIPIndex, TagIndex
 
-def run_opener(opener: str, image_paths: list[Path]):
+def run_opener(opener: str, image_paths: list[Path], page_size: int):
+    image_paths = sorted(image_paths)
     if opener and image_paths:
-        subprocess.run([*opener.split(), *sorted(image_paths)])
+        if page_size == 0:
+            pages = [image_paths]
+        else:
+            pages = [image_paths[i:i + page_size] for i in range(0, len(image_paths), page_size)]
+
+        processes = [
+            subprocess.Popen([*opener.split(), *page])
+            for page in pages
+        ]
+        for proc in processes:
+            proc.wait()
 
 def imgsearch(args):
     embedder = CLIPEmbedder(model_name=args.model)
@@ -26,7 +37,7 @@ def imgsearch(args):
     if args.print:
         pp(image_paths)
 
-    run_opener(args.open_with, image_paths)
+    run_opener(args.open_with, image_paths, args.page_size)
 
 def tag(args):
     pairs = gather_gallery_files(Path(args.dir))
@@ -63,7 +74,7 @@ def tagsearch(args):
     if args.print:
         pp(image_paths)
 
-    run_opener(args.open_with, image_paths)
+    run_opener(args.open_with, image_paths, args.page_size)
 
 def generate_jsonfiles(args):
     dir = Path(args.dir)
@@ -87,6 +98,7 @@ def main():
     imgsearch_parser.add_argument('--model', type=str, default="openai/clip-vit-base-patch16", help='CLIP model to use')
     imgsearch_parser.add_argument('--print', type=bool, default=True, help='Print results')
     imgsearch_parser.add_argument('--open_with', type=str, default=None, help='Program to open results with')
+    imgsearch_parser.add_argument('--page_size', type=int, default=50, help='Number of results to return')
     imgsearch_parser.set_defaults(func=imgsearch)
 
     tag_parser = subparsers.add_parser('tag', help='Tag images')
@@ -98,6 +110,7 @@ def main():
     ts_parser.add_argument('--query', type=str, required=True, help='Space-separated list of tags')
     ts_parser.add_argument('--print', type=bool, default=True, help='Print results')
     ts_parser.add_argument('--open_with', type=str, default=None, help='Program to open results with')
+    ts_parser.add_argument('--page_size', type=int, default=50, help='Number of results to return')
     ts_parser.set_defaults(func=tagsearch)
 
     jsonfile_parser = subparsers.add_parser('jsonfile', help='Generate json files')
