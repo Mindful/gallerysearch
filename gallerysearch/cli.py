@@ -1,6 +1,7 @@
 import argparse
 import json
 import subprocess
+import os
 from pathlib import Path
 from pprint import pp
 
@@ -13,7 +14,7 @@ from gallerysearch.gather import gather_gallery_files
 from gallerysearch.index import CLIPIndex, TagIndex
 
 def run_opener(opener: str, image_paths: list[Path], page_size: int):
-    image_paths = sorted(image_paths)
+    image_paths = sorted(image_paths, key=os.path.getmtime, reverse=True)
     if opener and image_paths:
         if page_size == 0:
             pages = [image_paths]
